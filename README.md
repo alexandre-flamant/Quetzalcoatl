@@ -24,3 +24,6 @@ Expected supported actions are
 ## Compatibility
 This program is developped and tested on the **3.13.1.1** version of the firmware.
 
+## Warranty and note
+This software is developped as it with no warranty. I won't be liable for any dammage on your remarkable resulting from the use of it.
+This is my first JS project, caution is advised on the quality of the code and the absence of bugs.
