@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "outDir": "./dist",
+        "allowJs": false,
+        "target": "ES2023",
+        "sourceMap": true,
+        "strict": true
+    },
+    "include": ["./src/**/*"]
+}
