@@ -1,7 +1,8 @@
 import { ConnectOptions } from 'ssh2-sftp-client';
-import { SFTPClient } from './sftp.js';
+import { RM2Client } from './RM2Client.js';
+import { FileSystem } from './FileSystem.js'
 
-let client: SFTPClient = new SFTPClient()
+let client: RM2Client = new RM2Client()
 let options: ConnectOptions = {
     host: '10.11.99.1',
     username:'root',
@@ -10,7 +11,11 @@ let options: ConnectOptions = {
 }
 await client.connect(options);
 
-let x = await client.listFiles();
-x.forEach((x)=>console.log(x))
+let uuids = await client.listUUID();
+let metadata = await client.getMetadata(uuids)
 
-client.disconnect();
+let fileSystem = new FileSystem(metadata)
+
+//client.disconnect();
+
+console.log("done")
