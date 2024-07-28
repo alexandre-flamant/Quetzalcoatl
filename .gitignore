@@ -1,3 +1,8 @@
+# Custom
+pdf-example/
+
+# Default for Typescript
+./dist/
 node_modules/
 .node_modules/
 built/*
