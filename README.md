@@ -1,6 +1,7 @@
 # Quetzalcoatl
 
 Quetzalcoatl is an utility to convert and upload files on the Remarkable 2 tablet to accomodate the Xochitl file system.
+The main goal is to bypass the use of cloud and web-usb interface which are both lacking when it comes to big files.
 
 ## Functionnality
 ### File type
