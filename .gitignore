@@ -2,7 +2,7 @@
 pdf-example/
 
 # Default for Typescript
-./dist/
+dist/
 node_modules/
 .node_modules/
 built/*
