@@ -6,7 +6,7 @@ import { Metadata } from "./global.js"
  * @param collection - List of sub-collection within the collection
  * @param files - Map that link file within the collection name as key to the corresponding UUID.
  */
-type Collection = {
+export type Collection = {
     name:string,
     uuid:string,
     collections:Collection[]
@@ -18,16 +18,21 @@ export class FileSystem {
     filesUUIDs: Set<string>
     collectionUUIDs: Set<string>
     metadata: Map<string, Metadata>
-    
+
+    private graphCollections: Map<string, string[]>
+    private graphFiles: Map<string, string[]>
+
     constructor(metadata:Map<string, Metadata>){
         this.metadata = metadata
         this.filesUUIDs = new Set();
         this.collectionUUIDs = new Set();
+        
+        // Initialize the directed acyclic graph
+        this.graphCollections= new Map()
+        this.graphFiles = new Map()
 
-        const graphCollections: Map<string, string[]> = new Map()
-        const graphFiles: Map<string, string[]> = new Map()
-        graphCollections.set("", [])
-        graphFiles.set("", [])
+        this.graphCollections.set("", [])
+        this.graphFiles.set("", [])
         this.metadata.forEach((data:Metadata, uuid:string) =>{
             switch (data.type) {
                 case "DocumentType":
@@ -35,35 +40,39 @@ export class FileSystem {
                     break;
                 case "CollectionType":
                     this.collectionUUIDs.add(uuid)
-                    graphCollections.set(uuid, [])
-                    graphFiles.set(uuid, [])
+                    this.graphCollections.set(uuid, [])
+                    this.graphFiles.set(uuid, [])
                     break
                 default:
                     throw new Error(`Type ${data.type} is not supported.`)
             }
         });
-
+        
+        // Fill the graph
         this.metadata.forEach((data:Metadata, uuid:string) =>{
             switch (data.type) {
                 case "DocumentType":
-                    graphFiles.get(data.parent)?.push(uuid)
+                    this.graphFiles.get(data.parent)?.push(uuid)
                     break;
                 case "CollectionType":
                     this.collectionUUIDs.add(uuid)
-                    graphCollections.get(data.parent)?.push(uuid)
+                    this.graphCollections.get(data.parent)?.push(uuid)
                     break
                 default:
                     throw new Error(`Type ${data.type} is not supported.`)
             }
         });
 
-        this.root = this.computeNode("", graphCollections, graphFiles)
+        // Compute the root of the file system representation
+        this.root = this.computeNode("")
     }
 
-    private computeNode(
-        uuid:string, 
-        graphCollections:Map<string, string[]>, 
-        graphFiles:Map<string, string[]>):Collection {
+    /**
+     * Compute the graph node of a Collection using recursive exploration of the graph from Xochitl file system.
+     * @param uuid - UUID of the node to generate the representation of
+     * @returns The representation of the node as a Collection.
+     */
+    private computeNode(uuid:string):Collection {
 
         let node:Collection = {
             name:this.metadata.get(uuid)?.visibleName ?? "",
@@ -72,13 +81,14 @@ export class FileSystem {
             files:new Map()
         }
 
-        for (const uuidFile of graphFiles.get(uuid) ?? []){
-            node.files.set(this.metadata.get(uuidFile)?.visibleName ?? "_error", uuidFile)
-        }
+        this.graphFiles.get(uuid)?.forEach((fileUUID)=>{
+            const fileName:string|undefined = this.metadata.get(fileUUID)?.visibleName
+            if (fileName) node.files.set(fileName , fileUUID)
+        })
 
-        for (const uuidCollection of graphCollections.get(uuid) ?? []){
-            node.collections.push(this.computeNode(uuidCollection, graphCollections, graphFiles))
-        }
+        this.graphCollections.get(uuid)?.forEach((collectionUUID)=>
+            node.collections.push(this.computeNode(collectionUUID))
+        )
 
         return node
     }

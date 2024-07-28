@@ -1,7 +1,6 @@
-import Client, { FileInfo } from 'ssh2-sftp-client';
+import Client from 'ssh2-sftp-client';
 import { ConnectOptions } from 'ssh2-sftp-client';
 import { DefaultConnectOptions, Metadata, XOCHITL_PATH } from './global.js';
-import { Readable } from 'stream';
 
 /**
  * This client manages the connection to the Remarkable 2 Xochilt file system through an SFTP session.
