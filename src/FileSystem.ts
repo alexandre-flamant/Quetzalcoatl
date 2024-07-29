@@ -3,17 +3,7 @@ import path from 'path';
 import { PDFDocument } from 'pdf-lib'
 import { v4 } from 'uuid'
 
-// Types
-/**
- * ConnectOption without the port as SFTP default port is 22
- */
-export type DefaultConnectOptions = {
-    host:string, 
-    username:string, 
-    password:string,
-};
-
-type Metadata = {
+export type Metadata = {
     createdTime: string,
     lastModified: string,
     lastOpened: string,
@@ -24,7 +14,7 @@ type Metadata = {
     visibleName: string
 }
 
-type Content = {
+export type Content = {
     coverPageNumber: number,
     customZoomCenterX: number,
     customZoomCenterY: number,
@@ -50,66 +40,6 @@ type Content = {
     textAlignment: "justify"|string,
     textScale: number,
     zoomMode: string
-}
-    
-
-export async function convert(filepath:string){
-    const metadata: Metadata = {} as Metadata
-    fs.stat(filepath, (err, stats)=>{
-        if (err) throw err
-        else {
-            metadata.createdTime = Math.floor(stats.ctimeMs).toString()
-            metadata.lastModified = Math.floor(stats.mtimeMs).toString()
-            metadata.lastOpened = "0"
-            metadata.lastOpenedPage = 0
-            metadata.parent = ""
-            metadata.pinned = false
-            metadata.type = "DocumentType"
-            metadata.visibleName = "" 
-        }
-    });
-    metadata.visibleName = path.basename(filepath) 
-    
-    const pdfBuffer = fs.readFileSync(filepath);
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
-    const pageCount: number = pdfDoc.getPageCount();
-    const author: string[] = pdfDoc.getAuthor()?.split(" ") ?? [];
-
-    const content: Content = {
-        coverPageNumber: 0,
-        customZoomCenterX: 0,
-        customZoomCenterY: 936,
-        customZoomOrientation: "portrait",
-        customZoomPageHeight: 1872,
-        customZoomPageWidth: 1404,
-        customZoomScale: 1,
-        extraMetadata: {},
-        fontName: "",
-        formatVersion: 1,
-        lineHeight: -1,
-        margins: 125,
-        orientation: "portrait",
-        tags: [],
-        textAlignment: "justify",
-        textScale: 1,
-        zoomMode: "bestFit",
-        pageTags: [],
-        documentMetadata: {
-            authors: author
-        },
-        fileType: path.extname(filepath).slice(1),
-        originalPageCount: pageCount,
-        pageCount: pageCount,
-        pages: Array.from({ length: pageCount + 1 }, () => v4()),
-        redirectionPageMap: Array.from({ length: pageCount + 1 }, (_, index) => index),
-        sizeInBytes: -1
-    }
-    const local = {
-        "contentFormatVersion": 1
-    }
-    const pagedata: string = Array.from({ length: pageCount + 1 }, () => "blank\n").join("")
-
-    return {metadata:metadata, content:content, local:local, pagedata:pagedata}
 }
 
 /**
@@ -179,6 +109,7 @@ export class FileSystem {
         this.root = this.computeNode("")
     }
 
+
     /**
      * Compute the graph node of a Collection using recursive exploration of the graph from Xochitl file system.
      * @param uuid - UUID of the node to generate the representation of
@@ -205,7 +136,60 @@ export class FileSystem {
         return node
     }
 
-    convertPDF(filename:string, outDir:string) {
+    static async convert(filepath:string){
+        const metadata: Metadata = {} as Metadata
+        await fs.promises.stat(filepath).then((stats)=>{
+                metadata.createdTime = Math.floor(stats.ctimeMs).toString()
+                metadata.lastModified = Math.floor(stats.mtimeMs).toString()
+                metadata.lastOpened = "0"
+                metadata.lastOpenedPage = 0
+                metadata.parent = ""
+                metadata.pinned = false
+                metadata.type = "DocumentType"
+                metadata.visibleName = "" 
+            })
+            
+        metadata.visibleName = path.basename(filepath) 
         
+        const pdfBuffer = fs.readFileSync(filepath);
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const pageCount: number = pdfDoc.getPageCount();
+        const author: string[] = pdfDoc.getAuthor()?.split(" ") ?? [];
+    
+        const content: Content = {
+            coverPageNumber: 0,
+            customZoomCenterX: 0,
+            customZoomCenterY: 936,
+            customZoomOrientation: "portrait",
+            customZoomPageHeight: 1872,
+            customZoomPageWidth: 1404,
+            customZoomScale: 1,
+            extraMetadata: {},
+            fontName: "",
+            formatVersion: 1,
+            lineHeight: -1,
+            margins: 125,
+            orientation: "portrait",
+            tags: [],
+            textAlignment: "justify",
+            textScale: 1,
+            zoomMode: "bestFit",
+            pageTags: [],
+            documentMetadata: {
+                authors: author
+            },
+            fileType: path.extname(filepath).slice(1),
+            originalPageCount: pageCount,
+            pageCount: pageCount,
+            pages: Array.from({ length: pageCount + 1 }, () => v4()),
+            redirectionPageMap: Array.from({ length: pageCount + 1 }, (_, index) => index),
+            sizeInBytes: -1
+        }
+        const local = {
+            "contentFormatVersion": 1
+        }
+        const pagedata: string = Array.from({ length: pageCount + 1 }, () => "blank\n").join("")
+    
+        return {metadata:metadata, content:content, local:local, pagedata:pagedata}
     }
 }

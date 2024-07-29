@@ -1,9 +1,8 @@
 import { ConnectOptions } from 'ssh2-sftp-client';
 import { RM2Client } from './RM2Client.js';
 import { FileSystem } from './FileSystem.js'
-import { convert } from './FileSystem.js';
 
-const filepath: string = 'test/pdf/ref.pdf'
+const filepath: string = 'temp/One Piece T067 (Eiichiro ODA) [eBook officiel 1920].pdf'
 
 let options: ConnectOptions = {
     host: '10.11.99.1',
@@ -12,20 +11,22 @@ let options: ConnectOptions = {
     port:22
 }
 
-//let client: RM2Client = new RM2Client(options)
-//await client.connect();
+let client: RM2Client = new RM2Client(options)
+await client.connect();
 
-//let uuids = await client.listUUID();
+let uuids = await client.listUUID();
 //let metadata = await client.getMetadata(uuids)
 
 //let fileSystem = new FileSystem(metadata)
+let x = await FileSystem.convert(filepath)
+client.writeFiles("000000-0000-0000-0000-000000000001", filepath, x)
 
 //client.reloadXochitl()
 
-//client.disconnect();
+
 
     
-let x = await convert(filepath)
-await new Promise(r => setTimeout(r, 2000));
 
-console.log("done");
+await new Promise(r => setTimeout(r, 2000));
+console.log("done")
+//console.log(x);

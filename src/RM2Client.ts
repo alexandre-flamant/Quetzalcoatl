@@ -1,7 +1,30 @@
 import { Client } from 'ssh2'
 import SFTPClient from 'ssh2-sftp-client';
 import { ConnectOptions } from 'ssh2-sftp-client';
-import { DefaultConnectOptions, Metadata, XOCHITL_PATH } from './global.js';
+import { XOCHITL_PATH } from './global.js';
+import { Content, Metadata } from './FileSystem.js';
+import { Readable, Writable } from 'stream'
+import fs from 'fs'
+import path from 'path';
+
+// Types
+/**
+ * ConnectOption without the port as SFTP default port is 22
+ */
+export type DefaultConnectOptions = {
+    host:string, 
+    username:string, 
+    password:string,
+};
+
+type RM2FileData = {
+    metadata: Metadata,
+    content: Content,
+    local: {
+        contentFormatVersion: number,
+    },
+    pagedata: string,
+}
 
 /**
  * This client manages the connection to the Remarkable 2 Xochilt file system through an SFTP session.
@@ -143,5 +166,50 @@ export class RM2Client {
             .catch(rejectMetadata);
         });
         return metadataPromise
+    }
+
+    async writeFiles(uuid:string, filepath:string, data:RM2FileData){
+        
+        // Write the file
+        var readStream:Readable = fs.createReadStream(filepath)
+        const extension:string = path.extname(filepath) 
+        var writeStream: Writable = this.client.createWriteStream(`${XOCHITL_PATH}/${uuid}${extension}`)
+        readStream.pipe(writeStream)
+        writeStream.on("error", (err:Error)=> {throw err})
+        writeStream.on("finish", ()=> console.log("file written"))
+
+        // Write .pagedata file
+        var readStream: Readable = Readable.from([data.pagedata])
+        var writeStream: Writable = this.client.createWriteStream(`${XOCHITL_PATH}/${uuid}.pagedata`)
+        readStream.pipe(writeStream)
+        writeStream.on("error", (err:Error)=> {throw err})
+        writeStream.on("finish", ()=> console.log("pagedata written"))
+        
+        // Write .metadata file
+        var readStream: Readable = Readable.from([JSON.stringify(data.metadata, null, '\t')])
+        var writeStream: Writable = this.client.createWriteStream(`${XOCHITL_PATH}/${uuid}.metadata`)
+        readStream.pipe(writeStream)
+        writeStream.on("error", (err:Error)=> {throw err})
+        writeStream.on("finish", ()=> console.log("metadata written"))
+           
+
+        // Write .content file
+        var readStream: Readable = Readable.from([JSON.stringify(data.content, null, '\t')])
+        var writeStream: Writable = this.client.createWriteStream(`${XOCHITL_PATH}/${uuid}.content`)
+        readStream.pipe(writeStream)
+        writeStream.on("error", (err:Error)=> {throw err})
+        writeStream.on("finish", ()=> console.log("content written"))
+
+        // Write .local file
+        var readStream: Readable = Readable.from([JSON.stringify(data.local, null, '\t')])
+        var writeStream: Writable = this.client.createWriteStream(`${XOCHITL_PATH}/${uuid}.local`)
+        readStream.pipe(writeStream)
+        writeStream.on("error", (err:Error)=> {throw err})
+        writeStream.on("finish", ()=> console.log("local written"))
+
+        // Create files
+        this.client.mkdir(`${XOCHITL_PATH}/${uuid}`)
+        this.client.mkdir(`${XOCHITL_PATH}/${uuid}.thumbnails`)
+        
     }
 }
