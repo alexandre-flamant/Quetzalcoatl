@@ -1,4 +1,5 @@
-import Client from 'ssh2-sftp-client';
+import { Client } from 'ssh2'
+import SFTPClient from 'ssh2-sftp-client';
 import { ConnectOptions } from 'ssh2-sftp-client';
 import { DefaultConnectOptions, Metadata, XOCHITL_PATH } from './global.js';
 
@@ -11,15 +12,24 @@ import { DefaultConnectOptions, Metadata, XOCHITL_PATH } from './global.js';
  *  - Upload files
  */
 export class RM2Client {
-    client: Client;
+    client: SFTPClient;
     connected:boolean;
+    private connectOptions:ConnectOptions;
 
     /**
      * Initialize the client
      */
-    constructor() {
-        this.client = new Client()
+    constructor(options: ConnectOptions|DefaultConnectOptions) {
+        this.client = new SFTPClient()
         this.connected = false;
+
+        // Convert add default port if missing
+        const connectOptions: ConnectOptions = {
+            ...options,
+            port: (options as ConnectOptions).port ?? 22
+        };
+        
+        this.connectOptions = connectOptions;
     }
 
     /**
@@ -27,22 +37,27 @@ export class RM2Client {
      * 
      * @param options - Connection options
      */
-    async connect(options: ConnectOptions|DefaultConnectOptions){
-        // Convert add default port if missing
-        const connectOptions: ConnectOptions = {
-            ...options,
-            port: (options as ConnectOptions).port ?? 22
-        };
-        
+    async connect(){
         // Initialize connection
-        console.log(`Connecting to ${options.username}@${options.host}:${connectOptions.port}`)
+        console.log(`Connecting to ${this.connectOptions.username}@${this.connectOptions.host}:${this.connectOptions.port}`)
         try{
-            await this.client.connect(connectOptions)
+            await this.client.connect(this.connectOptions)
             this.connected=true;
-            console.log(`Connected to ${options.username}@${options.host}:${connectOptions.port}`)
+            console.log(`Connected to ${this.connectOptions.username}@${this.connectOptions.host}:${this.connectOptions.port}`)
         } catch (err){
             console.log(`Failed to connect: ${err}`)
         }
+    }
+
+    async reloadXochitl(){
+        const client = new Client();
+        client.on('ready', ()=> client.exec("systemctl restart xochitl", (err, _)=>{if(err) console.log("Could not restart xochitl")}))
+        client.connect({
+            host:this.connectOptions.host,
+            username:this.connectOptions.username,
+            password:this.connectOptions.password
+        })
+
     }
 
     /**

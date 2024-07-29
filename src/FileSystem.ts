@@ -1,4 +1,116 @@
-import { Metadata } from "./global.js"
+import fs from 'fs'
+import path from 'path';
+import { PDFDocument } from 'pdf-lib'
+import { v4 } from 'uuid'
+
+// Types
+/**
+ * ConnectOption without the port as SFTP default port is 22
+ */
+export type DefaultConnectOptions = {
+    host:string, 
+    username:string, 
+    password:string,
+};
+
+type Metadata = {
+    createdTime: string,
+    lastModified: string,
+    lastOpened: string,
+    lastOpenedPage: number,
+    parent: string,
+    pinned: boolean,
+    type: string,
+    visibleName: string
+}
+
+type Content = {
+    coverPageNumber: number,
+    customZoomCenterX: number,
+    customZoomCenterY: number,
+    customZoomOrientation: "portrait"|"landscape",
+    customZoomPageHeight: number,
+    customZoomPageWidth: number,
+    customZoomScale: number,
+    documentMetadata: {authors: string[]}, //
+    extraMetadata: {},
+    fileType: string,
+    fontName: string,
+    formatVersion: number,
+    lineHeight: number,
+    margins: number,
+    orientation: "portrait"|"landscape",
+    originalPageCount: number,   //
+    pageCount: number,           //
+    pageTags: [],
+    pages: string[],             //
+    redirectionPageMap: number[] //
+    sizeInBytes: number,         //
+    tags: [],
+    textAlignment: "justify"|string,
+    textScale: number,
+    zoomMode: string
+}
+    
+
+export async function convert(filepath:string){
+    const metadata: Metadata = {} as Metadata
+    fs.stat(filepath, (err, stats)=>{
+        if (err) throw err
+        else {
+            metadata.createdTime = Math.floor(stats.ctimeMs).toString()
+            metadata.lastModified = Math.floor(stats.mtimeMs).toString()
+            metadata.lastOpened = "0"
+            metadata.lastOpenedPage = 0
+            metadata.parent = ""
+            metadata.pinned = false
+            metadata.type = "DocumentType"
+            metadata.visibleName = "" 
+        }
+    });
+    metadata.visibleName = path.basename(filepath) 
+    
+    const pdfBuffer = fs.readFileSync(filepath);
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const pageCount: number = pdfDoc.getPageCount();
+    const author: string[] = pdfDoc.getAuthor()?.split(" ") ?? [];
+
+    const content: Content = {
+        coverPageNumber: 0,
+        customZoomCenterX: 0,
+        customZoomCenterY: 936,
+        customZoomOrientation: "portrait",
+        customZoomPageHeight: 1872,
+        customZoomPageWidth: 1404,
+        customZoomScale: 1,
+        extraMetadata: {},
+        fontName: "",
+        formatVersion: 1,
+        lineHeight: -1,
+        margins: 125,
+        orientation: "portrait",
+        tags: [],
+        textAlignment: "justify",
+        textScale: 1,
+        zoomMode: "bestFit",
+        pageTags: [],
+        documentMetadata: {
+            authors: author
+        },
+        fileType: path.extname(filepath).slice(1),
+        originalPageCount: pageCount,
+        pageCount: pageCount,
+        pages: Array.from({ length: pageCount + 1 }, () => v4()),
+        redirectionPageMap: Array.from({ length: pageCount + 1 }, (_, index) => index),
+        sizeInBytes: -1
+    }
+    const local = {
+        "contentFormatVersion": 1
+    }
+    const pagedata: string = Array.from({ length: pageCount + 1 }, () => "blank\n").join("")
+
+    return {metadata:metadata, content:content, local:local, pagedata:pagedata}
+}
 
 /**
  * @param name - Name of the collection
@@ -93,5 +205,7 @@ export class FileSystem {
         return node
     }
 
-
+    convertPDF(filename:string, outDir:string) {
+        
+    }
 }
