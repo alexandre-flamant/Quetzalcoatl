@@ -180,76 +180,115 @@ export class RM2Client {
 
   /**
    * Write the file and is data to the tablet using streams.
-   * 
+   *
    * @param uuid - Unique Universal Identifier of the file
    * @param filepath - Path of the file to be uploaded
-   * @param data - Data generated from the file 
+   * @param data - Data generated from the file
    */
   async writeFiles(uuid: string, filepath: string, data: RM2FileData) {
-    // Write the file
-    var readStream: Readable = fs.createReadStream(filepath);
-    const extension: string = path.extname(filepath);
-    var writeStream: Writable = this.client.createWriteStream(
-      `${XOCHITL_PATH}/${uuid}${extension}`
-    );
-    readStream.pipe(writeStream);
-    writeStream.on("error", (err: Error) => {
-      throw err;
-    });
-    writeStream.on("finish", () => console.log("file written"));
+    let writePromise: Promise<undefined> = new Promise(
+      (resolveWrite, rejectWrite) => {
+        const extension: string = path.extname(filepath);
 
-    // Write .pagedata file
-    var readStream: Readable = Readable.from([data.pagedata]);
-    var writeStream: Writable = this.client.createWriteStream(
-      `${XOCHITL_PATH}/${uuid}.pagedata`
-    );
-    readStream.pipe(writeStream);
-    writeStream.on("error", (err: Error) => {
-      throw err;
-    });
-    writeStream.on("finish", () => console.log("pagedata written"));
+        // Write the file
+        let promiseFile = new Promise((resolve, reject) => {
+          var readStream: Readable = fs.createReadStream(filepath);
+          var writeStream: Writable = this.client.createWriteStream(
+            `${XOCHITL_PATH}/${uuid}${extension}`
+          );
+          readStream.pipe(writeStream);
+          writeStream.on("error", (err: Error) => {
+            throw err;
+          });
+          writeStream.on("close", () => {
+            resolve(undefined);
+            console.log(`${uuid}.${extension} written`);
+          });
+        });
 
-    // Write .metadata file
-    var readStream: Readable = Readable.from([
-      JSON.stringify(data.metadata, null, "\t"),
-    ]);
-    var writeStream: Writable = this.client.createWriteStream(
-      `${XOCHITL_PATH}/${uuid}.metadata`
-    );
-    readStream.pipe(writeStream);
-    writeStream.on("error", (err: Error) => {
-      throw err;
-    });
-    writeStream.on("finish", () => console.log("metadata written"));
+        // Write .pagedata file
+        let promisePagedata = new Promise((resolve, reject) => {
+          var readStream: Readable = Readable.from([data.pagedata]);
+          var writeStream: Writable = this.client.createWriteStream(
+            `${XOCHITL_PATH}/${uuid}.pagedata`
+          );
+          readStream.pipe(writeStream);
+          writeStream.on("error", (err: Error) => {
+            throw err;
+          });
+          writeStream.on("close", () => {
+            resolve(undefined);
+            new Promise(() => console.log(`${uuid}.pagedata written`));
+          });
+        });
 
-    // Write .content file
-    var readStream: Readable = Readable.from([
-      JSON.stringify(data.content, null, "\t"),
-    ]);
-    var writeStream: Writable = this.client.createWriteStream(
-      `${XOCHITL_PATH}/${uuid}.content`
-    );
-    readStream.pipe(writeStream);
-    writeStream.on("error", (err: Error) => {
-      throw err;
-    });
-    writeStream.on("finish", () => console.log("content written"));
+        // Write .metadata file
+        let promiseMetadata = new Promise((resolve, reject) => {
+          var readStream: Readable = Readable.from([
+            JSON.stringify(data.metadata, null, "\t"),
+          ]);
+          var writeStream: Writable = this.client.createWriteStream(
+            `${XOCHITL_PATH}/${uuid}.metadata`
+          );
+          readStream.pipe(writeStream);
+          writeStream.on("error", (err: Error) => {
+            throw err;
+          });
+          writeStream.on("close", () => {
+            resolve(undefined);
+            console.log(`${uuid}.metadata written`);
+          });
+        });
 
-    // Write .local file
-    var readStream: Readable = Readable.from([
-      JSON.stringify(data.local, null, "\t"),
-    ]);
-    var writeStream: Writable = this.client.createWriteStream(
-      `${XOCHITL_PATH}/${uuid}.local`
-    );
-    readStream.pipe(writeStream);
-    writeStream.on("error", (err: Error) => {
-      throw err;
-    });
-    writeStream.on("finish", () => console.log("local written"));
+        // Write .content file
+        let promiseContent = new Promise((resolve, reject) => {
+          var readStream: Readable = Readable.from([
+            JSON.stringify(data.content, null, "\t"),
+          ]);
+          var writeStream: Writable = this.client.createWriteStream(
+            `${XOCHITL_PATH}/${uuid}.content`
+          );
+          readStream.pipe(writeStream);
+          writeStream.on("error", (err: Error) => {
+            throw err;
+          });
+          writeStream.on("close", () => {
+            resolve(undefined);
+            console.log(`${uuid}.content written`);
+          });
+        });
 
-    // Create files
-    this.client.mkdir(`${XOCHITL_PATH}/${uuid}`);
-    this.client.mkdir(`${XOCHITL_PATH}/${uuid}.thumbnails`);
+        // Write .local file
+        let promiseLocal = new Promise((resolve, reject) => {
+          var readStream: Readable = Readable.from([
+            JSON.stringify(data.local, null, "\t"),
+          ]);
+          var writeStream: Writable = this.client.createWriteStream(
+            `${XOCHITL_PATH}/${uuid}.local`
+          );
+          readStream.pipe(writeStream);
+          writeStream.on("error", (err: Error) => {
+            throw err;
+          });
+          writeStream.on("close", () => {
+            resolve(undefined);
+            console.log(`${uuid}.local written`);
+          });
+        });
+        // Create files
+        let dir1Promise = this.client.mkdir(`${XOCHITL_PATH}/${uuid}`);
+        let dir2Promise = this.client.mkdir(
+          `${XOCHITL_PATH}/${uuid}.thumbnails`
+        );
+        Promise.all([promiseContent, promiseFile, promiseLocal, promiseMetadata, promisePagedata])
+          .then(() => {
+            resolveWrite(undefined);
+            console.log(`Transfer of ${path.basename(filepath)} done under ${uuid}`);
+          })
+          .catch(rejectWrite);
+      } 
+    );
+    
+    return writePromise;
   }
 }
