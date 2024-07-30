@@ -4,6 +4,9 @@ Quetzalcoatl is an SSH-based utility to convert and upload files on the Remarkab
 The main goal is to bypass the use of cloud and web-usb interface which are both lacking when it comes to big files.
 
 ## Functionnality
+### GUI
+Not yet implemented but should soon be ! 
+
 ### File type
 Here are the expected supported files type:
 
