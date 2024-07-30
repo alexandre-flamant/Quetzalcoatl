@@ -18,7 +18,7 @@ Here are the expected supported files type:
 Expected supported actions are
 | Action | Supported |
 |:--: | :--: |
-| _Conversion_ | ❌ |
+| _Type conversion_ | ❌ |
 | _Upload_ | ✅ |
 
 ## Compatibility
