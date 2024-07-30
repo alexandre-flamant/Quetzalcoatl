@@ -13,16 +13,12 @@ let options: ConnectOptions = {
 
 let client: RM2Client = new RM2Client(options);
 await client.connect();
+let uuids = await client.listUUID()
+let metadata = await client.getMetadata(uuids)
+let fs = new RM2FileSystem(metadata)
+let dirUUID = fs.getCollectionUUID("Livres//mangas//HXH")
 
-let uuids = await client.listUUID();
-//let metadata = await client.getMetadata(uuids)
+let fileData = await RM2FileSystem.convert(filepath, dirUUID);
+await client.writeFiles("000000-0000-0000-0000-000000000000", filepath, fileData);
 
-//let fileSystem = new FileSystem(metadata)
-let x = await RM2FileSystem.convert(filepath);
-client.writeFiles("000000-0000-0000-0000-000000000000", filepath, x);
-
-//client.reloadXochitl()
-
-await new Promise((r) => setTimeout(r, 2000));
-console.log("done");
-//console.log(x);
+client.reloadXochitl()

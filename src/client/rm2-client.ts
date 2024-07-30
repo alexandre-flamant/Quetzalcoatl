@@ -280,15 +280,25 @@ export class RM2Client {
         let dir2Promise = this.client.mkdir(
           `${XOCHITL_PATH}/${uuid}.thumbnails`
         );
-        Promise.all([promiseContent, promiseFile, promiseLocal, promiseMetadata, promisePagedata])
+        Promise.all([
+          promiseContent,
+          promiseFile,
+          promiseLocal,
+          promiseMetadata,
+          promisePagedata,
+          dir1Promise,
+          dir2Promise,
+        ])
           .then(() => {
             resolveWrite(undefined);
-            console.log(`Transfer of ${path.basename(filepath)} done under ${uuid}`);
+            console.log(
+              `Transfer of ${path.basename(filepath)} done under ${uuid}`
+            );
           })
           .catch(rejectWrite);
-      } 
+      }
     );
-    
+
     return writePromise;
   }
 }

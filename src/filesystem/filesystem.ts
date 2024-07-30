@@ -96,9 +96,10 @@ export class RM2FileSystem {
   /**
    * Produce the associated files
    * @param filepath - File path to the file that need to be uploaded
+   * @param collection - UUID of the collection to put the file in. If not specified, file is put at the root
    * @returns The content of all document related files
    */
-  static async convert(filepath: string) {
+  static async convert(filepath: string, collection?:string) {
     // Create .metadata
     const metadata: Metadata = {} as Metadata;
     await fs.promises.stat(filepath).then((stats) => {
@@ -106,7 +107,7 @@ export class RM2FileSystem {
       metadata.lastModified = Math.floor(stats.mtimeMs).toString();
       metadata.lastOpened = "0";
       metadata.lastOpenedPage = 0;
-      metadata.parent = "";
+      metadata.parent = collection ?? "";
       metadata.pinned = false;
       metadata.type = "DocumentType";
       metadata.visibleName = "";
@@ -170,5 +171,32 @@ export class RM2FileSystem {
       local: local,
       pagedata: pagedata,
     };
+  }
+
+  /**
+   * Get the UUID of a collection based on its path.  
+   *
+   * @param path - Path of the collection in the following fashion:
+   *               dir/subdir/subsubdir      
+   * @returns The UUID of the collection. If collection is not found return undefined.
+   */
+  getCollectionUUID(path:string){
+    let uuid = ""
+    let currCol = this.root
+
+    // Iterate through collection until it's found
+    for (const dir of path.split("//")){
+      let found = false;
+      for (const subdir of currCol.collections){
+        if (subdir.name == dir){
+          uuid = subdir.uuid;
+          currCol = subdir;
+          found = true;
+          break;
+        }
+      }
+      if (!found) return undefined;
+    }
+    return uuid;
   }
 }
