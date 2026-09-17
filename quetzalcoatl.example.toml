@@ -1,0 +1,32 @@
+# Copy this file to quetzalcoatl.toml and fill in your own values.
+# quetzalcoatl.toml is gitignored by name -- never commit your real one.
+
+host = "10.11.99.1"  # the tablet's default USB-gadget IP
+port = 22
+username = "root"
+
+# Preferred cipher order (optional). The tablet's Cortex-A7 CPU doing SSH
+# crypto -- not the USB link -- is the usual transfer-speed bottleneck, so a
+# lighter cipher here can help.
+ciphers = ["aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com"]
+
+# Default target folder for `import` when --folder isn't given, "//"-separated.
+# Empty means the tablet's root -- not any specific folder.
+default_folder = ""
+
+# Pick ONE of the two [auth] blocks below.
+
+# Password auth -- the password shown on the tablet under
+# Settings > About > Copyrights and licenses. Simple, fully supported.
+[auth]
+method = "password"
+password = "CHANGE_ME"
+
+# Key-based auth (recommended for repeated/scripted use). Copy your public
+# key to /home/root/.ssh/authorized_keys on the tablet first (over an
+# existing password-authenticated session), then use this instead:
+#
+# [auth]
+# method = "key"
+# private_key_path = "~/.ssh/quetzalcoatl_rm2"
+# # passphrase = "only if your key has one"
